@@ -1,28 +1,50 @@
-import { useState } from 'react'
+import { useEffect, useState } from "react";
+import Header from "./components/Header";
+import PlayerForm from "./components/PlayerForm";
+import InningsForm from "./components/InningsForm";
+import PlayerList from "./components/PlayerList";
+import PlayerDetail from "./components/PlayerDetail";
+
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [players, setPlayers] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  async function loadPlayers() {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/players`);
+      const json = await res.json();
+      setPlayers(json);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadPlayers();
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">
-          Vibe Coding Platform
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Your AI-powered development environment
-        </p>
-        <div className="text-center">
-          <button
-            onClick={() => setCount(count + 1)}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
-          >
-            Count is {count}
-          </button>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50">
+      <Header />
+      <main className="max-w-5xl mx-auto p-4 space-y-4">
+        <div className="grid md:grid-cols-2 gap-4">
+          <PlayerForm onCreated={loadPlayers} />
+          <InningsForm players={players} onAdded={loadPlayers} />
         </div>
-      </div>
+
+        <PlayerList players={players} onRefresh={loadPlayers} onSelect={setSelected} />
+        {loading && <div className="text-center text-sm text-gray-500">Loading...</div>}
+      </main>
+
+      {selected && <PlayerDetail player={selected} onClose={() => setSelected(null)} />}
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
